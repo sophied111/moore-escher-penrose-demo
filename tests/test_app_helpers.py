@@ -30,3 +30,48 @@ def test_friendly_zerogpu_error_maps_quota():
     err = app._friendly_zerogpu_error(RuntimeError("ZeroGPU quota exceeded: 60s requested vs. 30s left"))
     assert isinstance(err, gr.Error)
     assert "quota" in str(err).lower()
+
+
+def test_friendly_zerogpu_error_maps_illegal_duration():
+    err = app._friendly_zerogpu_error(RuntimeError("ZeroGPU illegal duration"))
+    assert isinstance(err, gr.Error)
+    assert "limit" in str(err).lower()
+
+
+def test_friendly_zerogpu_error_generic_for_unknown():
+    err = app._friendly_zerogpu_error(RuntimeError("CUDA out of memory"))
+    assert isinstance(err, gr.Error)
+    assert "quota" not in str(err).lower() and "limit" not in str(err).lower()
+
+
+def test_estimate_duration_accepts_run_args():
+    # The duration callable is invoked by @spaces.GPU with _run's exact args:
+    # (prompt, seed, family, progress) — four positional args.
+    assert isinstance(app._estimate_duration("p", 7, "conformal", None), int)
+
+
+def test_generate_maps_real_zerogpu_quota_grerror(monkeypatch):
+    def boom(*a, **k):
+        raise gr.Error("ZeroGPU quota exceeded: 240s requested vs. 30s left")
+    monkeypatch.setattr(app, "_run", boom)
+    with pytest.raises(gr.Error) as ei:
+        app.generate("a gallery showing the same gallery", 7, "conformal")
+    assert "cached example" in str(ei.value).lower()
+
+
+def test_generate_passes_through_unrelated_grerror(monkeypatch):
+    def boom(*a, **k):
+        raise gr.Error("some unrelated validation message")
+    monkeypatch.setattr(app, "_run", boom)
+    with pytest.raises(gr.Error) as ei:
+        app.generate("a gallery showing the same gallery", 7, "conformal")
+    assert "some unrelated validation message" in str(ei.value)
+
+
+def test_generate_maps_unknown_exception_to_generic(monkeypatch):
+    def boom(*a, **k):
+        raise RuntimeError("kernel exploded")
+    monkeypatch.setattr(app, "_run", boom)
+    with pytest.raises(gr.Error) as ei:
+        app.generate("a gallery showing the same gallery", 7, "conformal")
+    assert "failed" in str(ei.value).lower()

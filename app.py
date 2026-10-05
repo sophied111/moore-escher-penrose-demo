@@ -3,6 +3,7 @@ import spaces  # MUST be first: monkey-patches torch.cuda before any CUDA import
 
 import os
 import time
+import traceback
 
 import gradio as gr
 
@@ -42,7 +43,7 @@ def _friendly_zerogpu_error(exc: Exception) -> gr.Error:
             "You've used your ZeroGPU quota for now. This is a heavy, full-quality "
             "run — sign in or go PRO for more GPU time, or open a cached example below."
         )
-    if "illegal duration" in msg or "duration" in msg:
+    if "illegal duration" in msg:
         return gr.Error(
             "This full-quality run is longer than your account's per-call GPU limit. "
             "Sign in / go PRO for a higher limit, or open a cached example below."
@@ -50,8 +51,18 @@ def _friendly_zerogpu_error(exc: Exception) -> gr.Error:
     return gr.Error("Generation failed on the GPU. Please try again.")
 
 
-def _estimate_duration(prompt, seed, family) -> int:
-    """Declared ZeroGPU duration (seconds). Set from the Task 7 baseline measurement."""
+def _is_zerogpu_limit(exc: Exception) -> bool:
+    """True if the exception is a ZeroGPU quota / per-call-duration rejection."""
+    msg = str(exc).lower()
+    return "quota" in msg or "illegal duration" in msg
+
+
+def _estimate_duration(prompt, seed, family, progress) -> int:
+    """Declared ZeroGPU duration (seconds), invoked by @spaces.GPU with _run's args.
+
+    Must accept the same arguments as _run — ZeroGPU calls the duration callable
+    with the decorated function's args. Set the value from the Task 7 baseline.
+    """
     return 240  # placeholder until Task 7 measures the real worst case
 
 
@@ -80,9 +91,15 @@ def generate(prompt: str, seed, family: str, progress=gr.Progress()):
     t0 = time.time()
     try:
         img = _run(prompt, seed, family, progress)
-    except gr.Error:
+    except gr.Error as err:
+        # ZeroGPU quota/duration rejections ARE gr.Error (raised synchronously in
+        # the main process from the scheduler); remap those to friendly guidance.
+        # Any other gr.Error (e.g. a validation message) passes through unchanged.
+        if _is_zerogpu_limit(err):
+            raise _friendly_zerogpu_error(err)
         raise
-    except Exception as exc:  # ZeroGPU quota/duration + anything else from the worker
+    except Exception as exc:  # genuine worker failure — log server-side, show generic
+        traceback.print_exc()
         raise _friendly_zerogpu_error(exc)
     caption = f"seed={seed} · family={family} · {time.time() - t0:.0f}s"
     return img, caption

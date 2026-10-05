@@ -2,6 +2,17 @@ import re
 from pathlib import Path
 
 
+def _dist_name(requirement_line: str) -> str:
+    """Distribution name from a requirement line (before any version/extra/url spec)."""
+    return re.split(r"[\s=<>!~\[@]", requirement_line, maxsplit=1)[0].strip().lower()
+
+
+def test_dist_name_parses_versioned_and_url_requirements():
+    assert _dist_name("gradio==6.29.1") == "gradio"
+    assert _dist_name("spaces>=0.30") == "spaces"
+    assert _dist_name("moore-escher-penrose[flux] @ git+https://x@sha") == "moore-escher-penrose"
+
+
 def _frontmatter():
     text = Path("README.md").read_text(encoding="utf-8")
     m = re.match(r"^---\n(.*?)\n---\n", text, re.DOTALL)
@@ -27,5 +38,6 @@ def test_requirements_pin_is_frozen():
     assert any("moore-escher-penrose" in ln for ln in pkg_lines)
     for ln in pkg_lines:
         assert "@main" not in ln, "pin an immutable SHA/tag, never @main"
+    names = [_dist_name(ln) for ln in pkg_lines]
     for banned in ("gradio", "spaces", "huggingface_hub"):
-        assert banned not in pkg_lines, f"do not list {banned}"
+        assert banned not in names, f"do not list {banned}"
