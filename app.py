@@ -18,7 +18,10 @@ if not _SKIP_BACKBONE:
     from escher.backbones.flux import FluxBackbone
     from escher.sampler import sample
 
-    BASE = load_preset("flux_conformal")
+    # escher's configs/ live outside the installed package, so the pip wheel does
+    # not ship them — load the preset vendored in this repo by explicit path.
+    _PRESET_PATH = os.path.join(os.path.dirname(__file__), "configs", "flux_conformal.yaml")
+    BASE = load_preset(_PRESET_PATH)
     BACKBONE = FluxBackbone(model_id=BASE.model_id, num_inference_steps=BASE.num_steps)
 else:  # test mode: no model, no GPU
     BASE = None
