@@ -1,7 +1,14 @@
 # escher pinned to an immutable tag (never @main), FLUX extra. v0.1.1 ships the
 # preset YAMLs as package data, so no config needs vendoring in this repo.
 escher[flux] @ git+https://github.com/sophied111/moore-escher-penrose.git@v0.1.1
-diffusers>=0.37.1
-transformers>=5.6.2
-accelerate>=1.2.0
+# Model-behavior deps pinned to the paper's flux lock (requirements-flux.lock.txt
+# @ v0.1.1) to track the reference run as closely as ZeroGPU allows. torch is NOT
+# pinned (ZeroGPU supplies it — currently 2.13) and huggingface_hub is platform-
+# managed (never pin it), so byte-identical parity is still not expected on
+# ZeroGPU's Blackwell GPU — this only reduces the version-drift component.
+diffusers==0.37.1
+transformers==5.6.2
+accelerate==1.14.0
+tokenizers==0.22.2
+safetensors==0.7.0
 sentencepiece

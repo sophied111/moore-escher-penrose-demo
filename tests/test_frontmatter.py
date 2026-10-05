@@ -43,5 +43,15 @@ def test_requirements_pin_is_frozen():
     # from its pyproject), not the GitHub repo name — pip rejects a name @ url
     # whose declared name disagrees with the built metadata.
     assert "escher" in names, "pin the dist name 'escher', not the repo name"
-    for banned in ("gradio", "spaces", "huggingface_hub"):
-        assert banned not in names, f"do not list {banned}"
+    for banned in ("gradio", "spaces", "huggingface_hub", "huggingface-hub"):
+        assert banned not in names, f"do not list {banned} (ZeroGPU platform-managed)"
+
+
+def test_model_deps_pinned_to_flux_lock():
+    # Track the paper's flux lock for the deps that drive the math, so the Space
+    # output stays as close to the clean-code reference as ZeroGPU allows. torch
+    # is intentionally NOT pinned (ZeroGPU supplies it); hub is platform-managed.
+    reqs = Path("requirements.txt").read_text(encoding="utf-8")
+    for pin in ("diffusers==0.37.1", "transformers==5.6.2", "accelerate==1.14.0",
+                "tokenizers==0.22.2", "safetensors==0.7.0"):
+        assert pin in reqs, f"pin {pin} to the flux lock"
