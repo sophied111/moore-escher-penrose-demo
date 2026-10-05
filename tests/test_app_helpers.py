@@ -44,10 +44,12 @@ def test_friendly_zerogpu_error_generic_for_unknown():
     assert "quota" not in str(err).lower() and "limit" not in str(err).lower()
 
 
-def test_estimate_duration_accepts_run_args():
+def test_estimate_duration_within_free_tier_cap():
     # The duration callable is invoked by @spaces.GPU with _run's exact args:
-    # (prompt, seed, family, progress) — four positional args.
-    assert isinstance(app._estimate_duration("p", 7, "conformal", None), int)
+    # (prompt, seed, family, progress). It must declare <= the free-tier 120s
+    # per-call cap, or ZeroGPU rejects the call with "illegal duration".
+    d = app._estimate_duration("p", 7, "conformal", None)
+    assert isinstance(d, int) and d <= 120
 
 
 def test_generate_maps_real_zerogpu_quota_grerror(monkeypatch):

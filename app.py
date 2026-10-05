@@ -66,7 +66,7 @@ def _estimate_duration(prompt, seed, family, progress) -> int:
     Must accept the same arguments as _run — ZeroGPU calls the duration callable
     with the decorated function's args. Set the value from the Task 7 baseline.
     """
-    return 240  # placeholder until Task 7 measures the real worst case
+    return 120  # free-tier per-call cap; bump once on PRO/dedicated hardware
 
 
 @spaces.GPU(duration=_estimate_duration)
