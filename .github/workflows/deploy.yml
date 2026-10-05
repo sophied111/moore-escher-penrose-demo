@@ -17,7 +17,7 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          hf upload sophied111/moore-escher-penrose-demo . \
+          hf upload SophieD/moore-escher-penrose-demo . \
             --repo-type space \
             --exclude "**/__pycache__/**" \
             --exclude ".git/**" \
