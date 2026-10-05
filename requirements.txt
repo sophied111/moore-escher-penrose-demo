@@ -1,5 +1,5 @@
 # escher pinned to an immutable algorithm-repo commit (never @main), FLUX extra.
-moore-escher-penrose[flux] @ git+https://github.com/sophied111/moore-escher-penrose@9e311b819ea148f46e58cdd52a8e8000b73fa458
+escher[flux] @ git+https://github.com/sophied111/moore-escher-penrose@9e311b819ea148f46e58cdd52a8e8000b73fa458
 diffusers>=0.37.1
 transformers>=5.6.2
 accelerate>=1.2.0

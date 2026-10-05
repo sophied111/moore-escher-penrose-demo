@@ -39,5 +39,9 @@ def test_requirements_pin_is_frozen():
     for ln in pkg_lines:
         assert "@main" not in ln, "pin an immutable SHA/tag, never @main"
     names = [_dist_name(ln) for ln in pkg_lines]
+    # The VCS pin's distribution name must be the package's real name ('escher',
+    # from its pyproject), not the GitHub repo name — pip rejects a name @ url
+    # whose declared name disagrees with the built metadata.
+    assert "escher" in names, "pin the dist name 'escher', not the repo name"
     for banned in ("gradio", "spaces", "huggingface_hub"):
         assert banned not in names, f"do not list {banned}"
